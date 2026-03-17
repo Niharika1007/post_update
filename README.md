@@ -6,9 +6,6 @@ Express
 PostgreSQL (Neon)
 JWT Authentication
 
-## Deployment
-Backend hosted on Render
-
 ## Features
 - User registration and login
 - Role-based access (author, editor, admin)
