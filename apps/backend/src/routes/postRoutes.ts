@@ -5,14 +5,20 @@ import {
   getPosts,
   getPostById,
   updatePost,
-  deletePost
+  deletePost,
+  updatePostStatus
 } from "../controllers/postController"
 import { checkRole } from "../middleware/roleMiddleware"
 
 const router = Router()
 
 // Create Post → author, editor, admin
-router.post("/posts", verifyToken, checkRole(["author", "editor", "admin"]), createPost)
+router.post(
+  "/posts",
+  verifyToken,
+  checkRole(["author", "editor", "admin"]),
+  createPost
+)
 
 // Get all posts → any logged-in user
 router.get("/posts", verifyToken, getPosts)
@@ -21,9 +27,27 @@ router.get("/posts", verifyToken, getPosts)
 router.get("/posts/:id", verifyToken, getPostById)
 
 // Update post → editor, admin
-router.put("/posts/:id", verifyToken, checkRole(["editor", "admin"]), updatePost)
+router.put(
+  "/posts/:id",
+  verifyToken,
+  checkRole(["editor", "admin"]),
+  updatePost
+)
+
+// Update post status → editor, admin
+router.put(
+  "/posts/:id/status",
+  verifyToken,
+  checkRole(["editor", "admin"]),
+  updatePostStatus
+)
 
 // Delete post → admin only
-router.delete("/posts/:id", verifyToken, checkRole(["admin"]), deletePost)
+router.delete(
+  "/posts/:id",
+  verifyToken,
+  checkRole(["admin"]),
+  deletePost
+)
 
 export default router

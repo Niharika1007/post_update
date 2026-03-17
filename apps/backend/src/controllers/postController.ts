@@ -2,6 +2,21 @@ import { Request, Response } from "express"
 import { pool } from "../config/db"
 import slugify from "slugify"
 
+export const updatePostStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+
+    const result = await pool.query(
+      "UPDATE posts SET status=$1 WHERE id=$2 RETURNING *",
+      [status, id]
+    )
+
+    res.json(result.rows[0])
+  } catch (error) {
+    res.status(500).json({ message: "Error updating post status" })
+  }
+}
 export const createPost = async (req: any, res: Response) => {
   try {
     const { title, content, status } = req.body
@@ -82,6 +97,18 @@ export const updatePost = async (req: Request, res: Response) => {
     res.json(result.rows[0])
   } catch {
     res.status(500).json({ message: "Error updating post" })
+  }
+}
+
+export const getPublishedPosts = async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM posts WHERE status='published' ORDER BY created_at DESC"
+    )
+
+    res.json(result.rows)
+  } catch {
+    res.status(500).json({ message: "Error fetching blog posts" })
   }
 }
 
