@@ -6,6 +6,18 @@ type Post = {
   slug: string;
 };
 
+let posts = [];
+
+try {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
+    next: { revalidate: 900 }
+  });
+
+  posts = await res.json();
+} catch (e) {
+  console.error("API failed");
+}
+
 export default async function Blog() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
     next: { revalidate: 900 }

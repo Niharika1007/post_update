@@ -3,6 +3,6 @@ export default async function sitemap() {
   const posts = await res.json();
 
   return posts.map((p: any) => ({
-    url: `http://localhost:3000/blog/${p.slug}`,
+    url: `http://post-update.vercel.app/blog/${p.slug}`,
   }));
 }
