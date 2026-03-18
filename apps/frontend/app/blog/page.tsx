@@ -6,28 +6,33 @@ type Post = {
   slug: string;
 };
 
-let posts: any[] = [];
+async function getPosts(): Promise<Post[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api`,
+      { next: { revalidate: 900 } }
+    );
 
-try {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`);
+    if (!res.ok) {
+      console.error("API failed:", res.status);
+      return [];
+    }
 
-  if (res.ok) {
-    posts = await res.json();
+    return res.json();
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return [];
   }
-} catch (e) {
-  console.error("Fetch failed");
 }
 
 export default async function Blog() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/posts`, {
-    next: { revalidate: 900 }
-  });
-
-  const posts: Post[] = await res.json();
+  const posts = await getPosts();
 
   return (
     <div>
       <h1>Blog</h1>
+
+      {posts.length === 0 && <p>No posts available</p>}
 
       {posts.map((p) => (
         <a key={p.id} href={`/blog/${p.slug}`}>

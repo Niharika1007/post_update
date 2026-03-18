@@ -1,5 +1,5 @@
-import { Router } from "express"
-import { verifyToken } from "../middleware/authMiddleware"
+import { Router } from "express";
+import { verifyToken } from "../middleware/authMiddleware.js";
 import {
   createPost,
   getPosts,
@@ -7,76 +7,125 @@ import {
   updatePost,
   deletePost,
   updatePostStatus
-} from "../controllers/postController"
-import { checkRole } from "../middleware/roleMiddleware"
-import db from "../config/db"
-const router = Router()
+} from "../controllers/postController.js";
+import { checkRole } from "../middleware/roleMiddleware.js";
+import db from "../config/db.js";
 
-// Create Post → author, editor, admin
+const router = Router();
+
+// ✅ PUBLIC BLOG LIST (NO AUTH)
+router.get("/posts", async (req, res) => {
+  try {
+    const result = await db.query(`SELECT * FROM posts`);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ Error fetching posts:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ PUBLIC — ONLY PUBLISHED POSTS
+router.get("/", async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT id, title, slug 
+      FROM posts 
+      WHERE status='PUBLISHED'
+      AND published_at IS NOT NULL
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("❌ DB ERROR:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// ✅ GET BY SLUG
+router.get("/slug/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const post = await db.query(
+      `SELECT * FROM posts 
+       WHERE slug = $1 
+       AND status = 'PUBLISHED'
+       AND published_at IS NOT NULL`,
+      [slug]
+    );
+
+    if (!post.rows.length) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    res.json(post.rows[0]);
+  } catch (error) {
+    console.error("❌ Slug fetch error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 🔐 PROTECTED ROUTES
+
 router.post(
   "/posts",
   verifyToken,
   checkRole(["author", "editor", "admin"]),
-  createPost
-)
-
-// Get all posts → any logged-in user
-router.get("/posts", verifyToken, getPosts)
-
-// Get single post
-router.get("/posts/:id", verifyToken, getPostById)
-
-router.get("/slug/:slug", async (req, res) => {
-  const { slug } = req.params;
-
-  const post = await db.query(
-    `SELECT * FROM posts 
-     WHERE slug = $1 
-     AND status = 'PUBLISHED'
-     AND published_at IS NOT NULL`,
-    [slug]
-  );
-
-  if (!post.rows.length) {
-    return res.status(404).json({ message: "Not found" });
+  async (req, res) => {
+    try {
+      await createPost(req, res);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Create failed" });
+    }
   }
+);
 
-  res.json(post.rows[0]);
+router.get("/posts/:id", verifyToken, async (req, res) => {
+  try {
+    await getPostById(req, res);
+  } catch (error) {
+    res.status(500).json({ error: "Fetch failed" });
+  }
 });
 
-// Update post → editor, admin
 router.put(
   "/posts/:id",
   verifyToken,
   checkRole(["editor", "admin"]),
-  updatePost
-)
+  async (req, res) => {
+    try {
+      await updatePost(req, res);
+    } catch (error) {
+      res.status(500).json({ error: "Update failed" });
+    }
+  }
+);
 
-// Update post status → editor, admin
 router.put(
   "/posts/:id/status",
   verifyToken,
   checkRole(["editor", "admin"]),
-  updatePostStatus
-)
+  async (req, res) => {
+    try {
+      await updatePostStatus(req, res);
+    } catch (error) {
+      res.status(500).json({ error: "Status update failed" });
+    }
+  }
+);
 
-// Delete post → admin only
 router.delete(
   "/posts/:id",
   verifyToken,
   checkRole(["admin"]),
-  deletePost
-)
+  async (req, res) => {
+    try {
+      await deletePost(req, res);
+    } catch (error) {
+      res.status(500).json({ error: "Delete failed" });
+    }
+  }
+);
 
-router.get("/", async (req, res) => {
-  const result = await db.query(
-    `SELECT id, title, slug 
-     FROM posts 
-     WHERE status='PUBLISHED'
-     AND published_at IS NOT NULL`
-  );
-
-  res.json(result.rows);
-});
-
-export default router
+export default router;
