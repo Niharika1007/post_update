@@ -9,7 +9,7 @@ import {
   updatePostStatus
 } from "../controllers/postController"
 import { checkRole } from "../middleware/roleMiddleware"
-
+import db from "../config/db"
 const router = Router()
 
 // Create Post → author, editor, admin
@@ -25,6 +25,24 @@ router.get("/posts", verifyToken, getPosts)
 
 // Get single post
 router.get("/posts/:id", verifyToken, getPostById)
+
+router.get("/slug/:slug", async (req, res) => {
+  const { slug } = req.params;
+
+  const post = await db.query(
+    `SELECT * FROM posts 
+     WHERE slug = $1 
+     AND status = 'PUBLISHED'
+     AND published_at IS NOT NULL`,
+    [slug]
+  );
+
+  if (!post.rows.length) {
+    return res.status(404).json({ message: "Not found" });
+  }
+
+  res.json(post.rows[0]);
+});
 
 // Update post → editor, admin
 router.put(
@@ -49,5 +67,16 @@ router.delete(
   checkRole(["admin"]),
   deletePost
 )
+
+router.get("/", async (req, res) => {
+  const result = await db.query(
+    `SELECT id, title, slug 
+     FROM posts 
+     WHERE status='PUBLISHED'
+     AND published_at IS NOT NULL`
+  );
+
+  res.json(result.rows);
+});
 
 export default router

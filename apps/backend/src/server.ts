@@ -33,6 +33,7 @@ app.use(limiter)
 // Body parser
 app.use(express.json())
 
+app.use("/",testRoute)
 // Routes
 app.use("/api", blogRoutes)
 app.use("/api", postRoutes)

@@ -1,5 +1,5 @@
 import passport from "passport"
-import { pool } from "../config/db"
+import pool  from "../config/db"
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
 
 passport.use(

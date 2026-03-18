@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { v4 as uuidv4 } from "uuid"
-import { pool } from "../config/db"
+import pool  from "../config/db"
 
 // REGISTER
 export const register = async (req: Request, res: Response) => {
